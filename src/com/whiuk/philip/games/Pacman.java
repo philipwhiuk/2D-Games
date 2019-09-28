@@ -687,16 +687,16 @@ public class Pacman extends JFrame {
 	    	public void keyPressed(KeyEvent e) {
 	          int key = e.getKeyCode();	
 	          if (ingame) {
-	            if (key == KeyEvent.VK_LEFT) {
+	            if (key == KeyEvent.VK_LEFT || e.getKeyChar() == 'A' || e.getKeyChar() == 'a') {
 	              reqdx = -1;
 	              reqdy = 0;
-	            } else if (key == KeyEvent.VK_RIGHT) {
+	            } else if (key == KeyEvent.VK_RIGHT || e.getKeyChar() == 'D' || e.getKeyChar() == 'd') {
 	              reqdx = 1;
 	              reqdy = 0;
-	            } else if (key == KeyEvent.VK_UP) {
+	            } else if (key == KeyEvent.VK_UP || e.getKeyChar() == 'W' || e.getKeyChar() == 'w') {
 	              reqdx = 0;
 	              reqdy = -1;
-	            } else if (key == KeyEvent.VK_DOWN) {
+	            } else if (key == KeyEvent.VK_DOWN || e.getKeyChar() == 'S' || e.getKeyChar() == 's') {
 	              reqdx = 0;
 	              reqdy = 1;
 	            } else if (key == KeyEvent.VK_ESCAPE && timer.isRunning()) {
@@ -717,7 +717,11 @@ public class Pacman extends JFrame {
             public void keyReleased(final KeyEvent e) {
 		      int key = e.getKeyCode();
 		      if (key == Event.LEFT || key == Event.RIGHT
-		              || key == Event.UP ||  key == Event.DOWN) {
+		              || key == Event.UP ||  key == Event.DOWN
+					  || e.getKeyChar() == 'W' || e.getKeyChar() == 'A'
+					  || e.getKeyChar() == 'S' || e.getKeyChar() == 'D'
+                      || e.getKeyChar() == 'w' || e.getKeyChar() == 'a'
+                      || e.getKeyChar() == 's' || e.getKeyChar() == 'd') {
 		        reqdx = 0;
 		        reqdy = 0;
 		      }

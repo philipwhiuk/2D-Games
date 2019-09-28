@@ -11,23 +11,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.Timer;
+import javax.swing.*;
 
-/**
- * Snake implementation.
- * @author Philip
- *
- */
 @SuppressWarnings("serial")
 public class Snake extends JFrame {
-    /**
-     *
-     * @author Philip
-     *
-     */
-    public class Board extends GameBoard {
+    private class Board extends GameBoard {
         private final int WIDTH = 300;
         private final int HEIGHT = 300;
         private final int DOT_SIZE = 10;
@@ -129,11 +117,8 @@ public class Snake extends JFrame {
 	            gameOver(g2D);
 	        }
 	    }
-		/**
-		 * 
-		 * @param g2D 2D graphics context
-		 */
-	    public void gameOver(Graphics2D g2D) {
+
+        void gameOver(Graphics2D g2D) {
 	        String msg = "Game Over";
 	        Font small = new Font("Helvetica", Font.BOLD, 14);
 	        FontMetrics metr = this.getFontMetrics(small);
@@ -143,19 +128,15 @@ public class Snake extends JFrame {
 	        g2D.drawString(msg, (WIDTH - metr.stringWidth(msg)) / 2,
 	                     HEIGHT / 2);
 	    }
-	    /**
-	     * 
-	     */
-	    public void checkApple() {
+
+	    void checkApple() {
 	        if ((x[0] == appleX) && (y[0] == appleY)) {
 	            dots++;
 	            locateApple();
 	        }
 	    }
-	    /**
-	     * 
-	     */
-	    public void move() {
+
+	    void move() {
 	        for (int z = dots; z > 0; z--) {
 	            x[z] = x[(z - 1)];
 	            y[z] = y[(z - 1)];
@@ -173,10 +154,8 @@ public class Snake extends JFrame {
 	            y[0] += DOT_SIZE;
 	        }
 	    }
-	    /**
-	     * 
-	     */
-	    public void checkCollision() {
+
+	    void checkCollision() {
 			  for (int z = dots; z > 0; z--) {
 			
 			      if ((z > 4) && (x[0] == x[z]) && (y[0] == y[z])) {
@@ -199,10 +178,8 @@ public class Snake extends JFrame {
 	            inGame = false;
 	        }
 	    }
-	    /**
-	     * 
-	     */
-	    public void locateApple() {
+
+        void locateApple() {
 	        int r = (int) (Math.random() * RAND_POS);
 	        appleX = ((r * DOT_SIZE));
 	        r = (int) (Math.random() * RAND_POS);
@@ -222,25 +199,26 @@ public class Snake extends JFrame {
 	    	@Override
 	    	public void keyPressed(KeyEvent e) {
 	            int key = e.getKeyCode();
-	            if ((key == KeyEvent.VK_LEFT) && (!right)) {
+	            char keyChar = e.getKeyChar();
+	            if ((key == KeyEvent.VK_LEFT || keyChar == 'a' || keyChar == 'A' ) && (!right)) {
 	                left = true;
 	                up = false;
 	                down = false;
 	            }
 
-	            if ((key == KeyEvent.VK_RIGHT) && (!left)) {
+	            if ((key == KeyEvent.VK_RIGHT || keyChar == 'd' || keyChar == 'D' ) && (!left)) {
 	                right = true;
 	                up = false;
 	                down = false;
 	            }
 
-	            if ((key == KeyEvent.VK_UP) && (!down)) {
+	            if ((key == KeyEvent.VK_UP || keyChar == 'w' || keyChar == 'W' ) && (!down)) {
 	                up = true;
 	                right = false;
 	                left = false;
 	            }
 
-	            if ((key == KeyEvent.VK_DOWN) && (!up)) {
+	            if ((key == KeyEvent.VK_DOWN || keyChar == 's' || keyChar == 'S' ) && (!up)) {
 	                down = true;
 	                right = false;
 	                left = false;
@@ -248,12 +226,10 @@ public class Snake extends JFrame {
 	        }
 	    }
 	}
-	/**
-	 * 
-	 */
+
 	public Snake() {
 		add(new Board());
-		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(320, 340);
         setLocationRelativeTo(null);
         setTitle("Snake");

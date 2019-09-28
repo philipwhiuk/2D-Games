@@ -11,27 +11,11 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
-import javax.swing.JFrame;
-import javax.swing.Timer;
+import javax.swing.*;
 
-/**
- * Role Playing Game.
- * @author Philip
- *
- */
 @SuppressWarnings("serial")
-public class RPG extends JFrame {
-    /**
-     * Board.
-     * @author Philip
-     *
-     */
+class RPG extends JFrame {
     class Board extends GameBoard {
-        /**
-         * 
-         * @author Philip
-         *
-         */
         class TAdapter extends KeyAdapter {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -133,7 +117,7 @@ public class RPG extends JFrame {
             GameInit();
         }
 
-        public void CheckMaze() {
+        void CheckMaze() {
             short i = 0;
             boolean finished = true;
 
@@ -154,7 +138,7 @@ public class RPG extends JFrame {
             }
         }
 
-        public void Death() {
+        void Death() {
             livesleft--;
             if (livesleft == 0) {
                 ingame = false;
@@ -162,19 +146,17 @@ public class RPG extends JFrame {
             LevelContinue();
         }
 
-        public void DrawCharacter(Graphics2D g) {
+        void DrawCharacter(Graphics2D g) {
+        }
+
+        void GameInit() {
+        }
+
+        void GetImages() {
 
         }
 
-        public void GameInit() {
-
-        }
-
-        public void GetImages() {
-
-        }
-
-        public void LevelContinue() {
+        void LevelContinue() {
 
         }
 
@@ -183,7 +165,7 @@ public class RPG extends JFrame {
 
         }
 
-        public void MoveCharacter() {
+        void MoveCharacter() {
             int pos;
             short ch;
 
@@ -231,7 +213,7 @@ public class RPG extends JFrame {
          * 
          * @param g 2D graphics context
          */
-        public void MoveNPCs(Graphics2D g) {
+        void MoveNPCs(Graphics2D g) {
 
         }
 
@@ -252,13 +234,10 @@ public class RPG extends JFrame {
 
     }
 
-    /**
-     *
-     */
-    public RPG() {
+    RPG() {
         add(new Board());
         setTitle("RPG");
-        setDefaultCloseOperation(EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(380, 420);
         setLocationRelativeTo(null);
         setVisible(true);

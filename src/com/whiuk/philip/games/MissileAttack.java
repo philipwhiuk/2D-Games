@@ -4,7 +4,7 @@ import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import javax.swing.ImageIcon;
+import javax.swing.*;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.FontMetrics;
@@ -13,71 +13,24 @@ import java.awt.Graphics2D;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
+import java.util.Iterator;
 
-import javax.swing.JFrame;
-import javax.swing.Timer;
-
-/**
- * Missile attack game.
- * @author Philip
- *
- */
 @SuppressWarnings("serial")
 public class MissileAttack extends JFrame {
-    /**
-     * Indicates the object can move.
-     * @author Philip
-     *
-     */
     public interface Moveable {
-        /**
-         * Move the object based on it's direction and speed.
-         */
-        public void move();
+		void move();
     }
-
-    /**
-     * Represents a game sprite.
-     * @author Philip
-     *
-     */
     public abstract class Sprite {
-        /**
-         * X Position.
-         */
         protected int x;
-        /**
-         * Y Position.
-         */
         protected int y;
-        /**
-         * Constructor.
-         * @param x X Position
-         * @param y Y Position
-         */
         public Sprite(int x, int y) {
             this.x = x;
             this.y = y;
         }
-        /**
-         * @return the sprite's image
-         */
         public abstract Image getImage();
-        /**
-         * @return the sprite's x position
-         */
         public abstract int getX();
-        /**
-         * @return the sprite's y position
-         */
         public abstract int getY();
     }
-
-    /**
-     * Game board.
-     * @author Philip
-     *
-     */
 	public class Board extends GameBoard {
 
 	    private Timer timer;
@@ -87,7 +40,7 @@ public class MissileAttack extends JFrame {
 	    private int B_WIDTH;
 	    private int B_HEIGHT;
 
-	    private int[][] pos = { 
+	    private int[][] initialAlienPositions = {
 	        {2380, 29}, {2500, 59}, {1380, 89},
 	        {780, 109}, {580, 139}, {680, 239}, 
 	        {790, 259}, {760, 50}, {790, 150},
@@ -124,15 +77,12 @@ public class MissileAttack extends JFrame {
 	        B_WIDTH = getWidth();
 	        B_HEIGHT = getHeight();
 	    }
-	    /**
-	     * Initialise aliens.
-	     */
-	    public final void initAliens() {
-	        aliens = new ArrayList<Alien>();
 
-	        for (int i = 0; i < pos.length; i++) {
-	            aliens.add(new Alien(pos[i][0], pos[i][1]));
-	        }
+	    final void initAliens() {
+	        aliens = new ArrayList<>();
+			for (int[] initialAlienPosition : initialAlienPositions) {
+				aliens.add(new Alien(initialAlienPosition[0], initialAlienPosition[1]));
+			}
 	    }
 	    @Override
 	    public void paint(Graphics g) {
@@ -146,18 +96,15 @@ public class MissileAttack extends JFrame {
 	                g2d.drawImage(craft.getImage(), craft.getX(), craft.getY(),
 	                              this);
 
-	            ArrayList<Missile> ms = craft.getMissiles();
+				for (Missile missile : craft.getMissiles()) {
+					g2d.drawImage(missile.getImage(), missile.getX(), missile.getY(), this);
+				}
 
-	            for (int i = 0; i < ms.size(); i++) {
-	                Missile m = (Missile)ms.get(i);
-	                g2d.drawImage(m.getImage(), m.getX(), m.getY(), this);
-	            }
-
-	            for (int i = 0; i < aliens.size(); i++) {
-	                Alien a = (Alien)aliens.get(i);
-	                if (a.isVisible())
-	                    g2d.drawImage(a.getImage(), a.getX(), a.getY(), this);
-	            }
+				for (Alien alien : aliens) {
+					if (alien.isVisible()) {
+						g2d.drawImage(alien.getImage(), alien.getX(), alien.getY(), this);
+					}
+				}
 
 	            g2d.setColor(Color.WHITE);
 	            g2d.drawString("Aliens left: " + aliens.size(), 5, 15);
@@ -184,67 +131,60 @@ public class MissileAttack extends JFrame {
 	            ingame = false;
 	        }
 
-	        ArrayList<Missile> ms = craft.getMissiles();
+	        Iterator<Missile> missileIterator = craft.getMissiles().iterator();
+	        while(missileIterator.hasNext()) {
+                Missile m = missileIterator.next();
+                if (m.isAlive())
+                    m.move();
+                else missileIterator.remove();
+            }
 
-	        for (int i = 0; i < ms.size(); i++) {
-	            Missile m = (Missile) ms.get(i);
-	            if (m.isVisible()) 
-	                m.move();
-	            else ms.remove(i);
-	        }
-
-	        for (int i = 0; i < aliens.size(); i++) {
-	            Alien a = (Alien) aliens.get(i);
-	            if (a.isVisible()) 
-	                a.move();
-	            else aliens.remove(i);
-	        }
+            Iterator<Alien> alienIterator = aliens.iterator();
+	        while (alienIterator.hasNext()) {
+                Alien a = alienIterator.next();
+                if (a.isVisible()) {
+                    a.move();
+                } else {
+                    alienIterator.remove();
+                }
+            }
 
 	        craft.move();
 	        checkCollisions();
 	        repaint();  
 	    }
-        /**
-         * Check for collisions.
-         */
-	    public void checkCollisions() {
 
-	        Rectangle r3 = craft.getBounds();
+        void checkCollisions() {
 
-	        for (int j = 0; j < aliens.size(); j++) {
-	            Alien a = (Alien) aliens.get(j);
-	            Rectangle r2 = a.getBounds();
+	        Rectangle craftBounds = craft.getBounds();
 
-	            if (r3.intersects(r2)) {
-	                craft.setVisible(false);
-	                a.setVisible(false);
-	                ingame = false;
-	            }
-	        }
+            for (Alien alien : aliens) {
+                Rectangle alienBounds = alien.getBounds();
+
+                if (craftBounds.intersects(alienBounds)) {
+                    craft.setVisible(false);
+                    alien.setVisible(false);
+                    ingame = false;
+                }
+            }
 
 	        ArrayList<Missile> ms = craft.getMissiles();
 
-	        for (int i = 0; i < ms.size(); i++) {
-	            Missile m = (Missile) ms.get(i);
+            for (Missile missile : ms) {
 
-	            Rectangle r1 = m.getBounds();
+                Rectangle missileBounds = missile.getBounds();
 
-	            for (int j = 0; j < aliens.size(); j++) {
-	                Alien a = (Alien) aliens.get(j);
-	                Rectangle r2 = a.getBounds();
+                for (Alien alien : aliens) {
+                    Rectangle r2 = alien.getBounds();
 
-	                if (r1.intersects(r2)) {
-	                    m.setVisible(false);
-	                    a.setVisible(false);
-	                }
-	            }
-	        }
+                    if (missileBounds.intersects(r2)) {
+                        missile.setAlive(false);
+                        alien.setVisible(false);
+                    }
+                }
+            }
 	    }
-	    /**
-	     * Implementation of adapter.
-	     * @author Philip
-	     *
-	     */
+
 	    private class TAdapter extends KeyAdapter {
 	        @Override
 	        public void keyReleased(final KeyEvent e) {
@@ -256,11 +196,7 @@ public class MissileAttack extends JFrame {
 	        }
 	    }
 	}
-	/**
-	 * Player craft.
-	 * @author Philip
-	 *
-	 */
+
 	public class Craft extends Sprite implements Moveable {
 
 	    private String craft = "craft.png";
@@ -273,16 +209,13 @@ public class MissileAttack extends JFrame {
 	    private Image image;
 	    private ArrayList<Missile> missiles;
 
-	    /**
-	     * Default constructor.
-	     */
 	    public Craft() {
 	        super(40, 60);
 	        ImageIcon ii = new ImageIcon(this.getClass().getResource(craft));
 	        image = ii.getImage();
 	        width = image.getWidth(null);
 	        height = image.getHeight(null);
-	        missiles = new ArrayList<Missile>();
+	        missiles = new ArrayList<>();
 	        visible = true;
 	    }
 	    @Override
@@ -350,56 +283,50 @@ public class MissileAttack extends JFrame {
 	    public void keyPressed(KeyEvent e) {
 
 	        int key = e.getKeyCode();
+	        char keyChar = e.getKeyChar();
 
 	        if (key == KeyEvent.VK_SPACE) {
 	            fire();
 	        }
 
-	        if (key == KeyEvent.VK_LEFT) {
+	        if (key == KeyEvent.VK_LEFT || keyChar == 'a' || keyChar == 'd') {
 	            dx = -1;
 	        }
 
-	        if (key == KeyEvent.VK_RIGHT) {
+	        if (key == KeyEvent.VK_RIGHT || keyChar == 'd' || keyChar == 'D') {
 	            dx = 1;
 	        }
 
-	        if (key == KeyEvent.VK_UP) {
+	        if (key == KeyEvent.VK_UP || keyChar == 'w' || keyChar == 'W') {
 	            dy = -1;
 	        }
 
-	        if (key == KeyEvent.VK_DOWN) {
+	        if (key == KeyEvent.VK_DOWN || keyChar == 's' || keyChar == 'S') {
 	            dy = 1;
 	        }
 	    }
 
-	    /**
-	     * Fires a missile.
-	     */
-	    public void fire() {
+        void fire() {
 	        missiles.add(new Missile(x + width, y + height / 2));
 	    }
 
-
-        /**
-         * Responds to key releases
-         * @param e Key release event
-         */
 	    public void keyReleased(KeyEvent e) {
 	        int key = e.getKeyCode();
+	        char keyChar = e.getKeyChar();
 
-	        if (key == KeyEvent.VK_LEFT) {
+	        if (key == KeyEvent.VK_LEFT || keyChar == 'a' || keyChar == 'A') {
 	            dx = 0;
 	        }
 
-	        if (key == KeyEvent.VK_RIGHT) {
+	        if (key == KeyEvent.VK_RIGHT || keyChar == 'd' || keyChar == 'D') {
 	            dx = 0;
 	        }
 
-	        if (key == KeyEvent.VK_UP) {
+	        if (key == KeyEvent.VK_UP || keyChar == 'w' || keyChar == 'W') {
 	            dy = 0;
 	        }
 
-	        if (key == KeyEvent.VK_DOWN) {
+	        if (key == KeyEvent.VK_DOWN || keyChar == 's' || keyChar == 'S') {
 	            dy = 0;
 	        }
 	    }
@@ -479,7 +406,7 @@ public class MissileAttack extends JFrame {
 	 */
 	public class Missile extends Sprite implements Moveable {
 	    private Image image;
-	    boolean visible;
+	    boolean alive;
 	    private int width, height;
 
 	    private final int BOARD_WIDTH = 390;
@@ -495,7 +422,7 @@ public class MissileAttack extends JFrame {
 	        ImageIcon ii =
 	            new ImageIcon(this.getClass().getResource("missile.png"));
 	        image = ii.getImage();
-	        visible = true;
+	        alive = true;
 	        width = image.getWidth(null);
 	        height = image.getHeight(null);
 	    }
@@ -515,41 +442,30 @@ public class MissileAttack extends JFrame {
 	        return y;
 	    }
 
-        /**
-         * 
-         * @return Visibility of missile
-         */
-	    public final boolean isVisible() {
-	        return visible;
+	    public final boolean isAlive() {
+	        return alive;
 	    }
-	    /**
-	     * 
-	     * @param visible Visibility of missile
-	     */
-	    public final void setVisible(Boolean visible) {
-	        this.visible = visible;
+
+	    public final void setAlive(Boolean alive) {
+	        this.alive = alive;
 	    }
-	    /**
-	     * 
-	     * @return Collision bounds
-	     */
+
 	    public final Rectangle getBounds() {
 	        return new Rectangle(x, y, width, height);
 	    }
+
 	    @Override
 	    public void move() {
 	        x += MISSILE_SPEED;
 	        if (x > BOARD_WIDTH) {
-	            visible = false;
+	            alive = false;
 	        }
 	    }
 	}
-	/**
-	 * Constructor.
-	 */
+
 	public MissileAttack() {
         add(new Board());
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(400, 300);
         setLocationRelativeTo(null);
         setTitle("Missile Attack");

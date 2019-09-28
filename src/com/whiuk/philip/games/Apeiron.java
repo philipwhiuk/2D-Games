@@ -14,25 +14,11 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 
-import javax.swing.ImageIcon;
-import javax.swing.JFrame;
-import javax.swing.Timer;
+import javax.swing.*;
 
-/**
- * Apeiron clone.
- * @author Philip
- */
 @SuppressWarnings("serial")
-public class Apeiron extends JFrame {
-    /**
-     * Game board.
-     * @author Philip
-     */
+class Apeiron extends JFrame {
     private class Board extends GameBoard {
-        /**
-         * T-Adapter.
-         * @author Philip
-         */
         private class TAdapter extends KeyAdapter {
             @Override
             public void keyPressed(KeyEvent e) {
@@ -44,44 +30,16 @@ public class Apeiron extends JFrame {
                 craft.keyReleased(e);
             }
         }
-
-        /**
-         * The current mushroom field.
-         */
         ArrayList<Mushroom> mushrooms;
-        /**
-         * All the centipedes on the current level.
-         */
         ArrayList<Centipede> centipedes;
-        /**
-         * The player's craft.
-         */
         Craft craft;
-        /**
-         *
-         */
         boolean ingame;
-        /**
-         *
-         */
         Timer timer;
-        /**
-         *
-         */
         private int level;
-        /**
-         *
-         */
         private int boardWidth;
-        /**
-         *
-         */
         private int boardHeight;
 
-        /**
-         * 
-         */
-        public Board() {
+        Board() {
             addKeyListener(new TAdapter());
             setFocusable(true);
             setBackground(Color.BLACK);
@@ -144,14 +102,14 @@ public class Apeiron extends JFrame {
 
                 final Rectangle r1 = m.getBounds();
                 for (int j = 0; j < centipedes.size(); j++) {
-                    final Centipede a = centipedes.get(j);
-                    for (int k = 0; k < a.getParts().size(); k++) {
-                        final CentipedePart b = a.getParts().get(k);
+                    final Centipede centipede = centipedes.get(j);
+                    for (int k = 0; k < centipede.getParts().size(); k++) {
+                        final CentipedePart b = centipede.getParts().get(k);
                         final Rectangle r2 = b.getBounds();
                         if (r1.intersects(r2)) {
                             // TODO: Hit centipede part.
                             if (k == 0) {
-                                a.getParts().remove(k);
+                                centipede.getParts().remove(k);
                             }
                         }
                     }
@@ -164,13 +122,12 @@ public class Apeiron extends JFrame {
         }
 
         private void initLevel() {
-            // TODO Be more dynamic about how we spawn them
-            centipedes = new ArrayList<Centipede>();
+            centipedes = new ArrayList<>();
             centipedes.add(new Centipede(level, 0, 0));
         }
 
         private void initMushrooms() {
-            mushrooms = new ArrayList<Mushroom>();
+            mushrooms = new ArrayList<>();
             // TODO Randomly generate some shroomz
         }
 
@@ -186,26 +143,21 @@ public class Apeiron extends JFrame {
             if (ingame) {
                 final Graphics2D g2d = (Graphics2D) g;
 
-                if (craft.isVisible()) {
-                    g2d.setColor(Color.lightGray);
-                    g2d.fill(craft.getBounds());
-                    // g2d.drawImage(craft.getImage(), craft.getX(), craft.getY(),this);
+                if (craft.isAlive()) {
+                    craft.paint(g2d);
                 }
 
                 final ArrayList<Bullet> bs = craft.getBullets();
 
-                for (int i = 0; i < bs.size(); i++) {
-                    final Bullet b = bs.get(i);
-                    g2d.drawImage(b.getImage(), b.getX(), b.getY(), this);
+                for (final Bullet b : bs) {
+                    b.paint(g2d);
                 }
 
-                for (int i = 0; i < centipedes.size(); i++) {
-                    final Centipede c = centipedes.get(i);
-                    // TODO Centipede drawing
+                for (final Centipede c : centipedes) {
+                    c.paint(g2d);
                 }
 
                 g2d.setColor(Color.WHITE);
-                // Centipedes left
                 g2d.drawString("Centipedes left: " + centipedes.size(), 5, 15);
 
             } else {
@@ -223,13 +175,10 @@ public class Apeiron extends JFrame {
             g.dispose();
         }
     }
-    /**
-     * Bullet.
-     * @author Philip
-     */
+
     private class Bullet {
-        private final static int WIDTH = 0, HEIGHT = 0;
-        private final String imgpath = "bullet.png";
+        private final static int WIDTH = 5, HEIGHT = 5;
+        private final String imgpath = "missile.png";
         Image image;
         boolean visible;
         int x, y, width, height;
@@ -254,7 +203,7 @@ public class Apeiron extends JFrame {
         }
 
         int getX() {
-            return 0;
+            return x;
         }
 
         int getY() {
@@ -266,13 +215,16 @@ public class Apeiron extends JFrame {
         }
 
         public void move() {
-            // TODO Move the bullet
+            y--;
+        }
+
+        public void paint(Graphics2D g2d) {
+            g2d.setColor(Color.YELLOW);
+            g2d.fill(getBounds());
         }
     }
 
     class Centipede {
-        String head = "centipedeHead.png";
-        String body = "centipedeHead.png";
         ArrayList<CentipedePart> parts;
 
         public Centipede(final int l, final int x, final int y) {
@@ -297,6 +249,12 @@ public class Apeiron extends JFrame {
         public void move() {
             for (CentipedePart part: parts) {
                 part.move();
+            }
+        }
+
+        public void paint(Graphics2D g2d) {
+            for (CentipedePart part : parts) {
+                part.paint(g2d);
             }
         }
     }
@@ -326,19 +284,23 @@ public class Apeiron extends JFrame {
         public void move() {
             // TODO: Centipede Part Shuffle
         }
+
+        public void paint(Graphics2D g2d) {
+            g2d.setColor(Color.CYAN);
+            g2d.fillOval(x, y, WIDTH, HEIGHT);
+        }
     }
 
     class Craft {
-        String imgpath = "craft.png";
         ArrayList<Bullet> bullets;
         int x, y, width = 10, height = 10;
         int dx, dy;
         Image image;
-        private boolean visible;
+        private boolean alive;
 
         Craft() {
-            bullets = new ArrayList<Bullet>();
-            visible = true;
+            bullets = new ArrayList<>();
+            alive = true;
             x = 40;
             y = 60;
         }
@@ -363,8 +325,8 @@ public class Apeiron extends JFrame {
             return y;
         }
 
-        public boolean isVisible() {
-            return visible;
+        public boolean isAlive() {
+            return alive;
         }
 
         public void keyPressed(KeyEvent e) {
@@ -381,8 +343,8 @@ public class Apeiron extends JFrame {
                 dy = 1;
             }
         }
-        public void fire() {
-            bullets.add(new Bullet(x + width, y + height / 2));
+        void fire() {
+            bullets.add(new Bullet(x + width/2 - Bullet.WIDTH/2, y - Bullet.HEIGHT));
         }
 
         public void keyReleased(KeyEvent e) {
@@ -417,6 +379,11 @@ public class Apeiron extends JFrame {
                 y = 1;
             }
         }
+
+        public void paint(Graphics2D g2d) {
+            g2d.setColor(Color.lightGray);
+            g2d.fill(getBounds());
+        }
     }
 
     class Mushroom {
@@ -425,7 +392,7 @@ public class Apeiron extends JFrame {
 
     Apeiron() {
         add(new Board());
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(400, 300);
         setLocationRelativeTo(null);
         setTitle("Apeiron");
