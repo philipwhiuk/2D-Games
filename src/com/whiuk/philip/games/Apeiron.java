@@ -12,12 +12,16 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
+import java.util.*;
 
 import javax.swing.*;
+import javax.swing.Timer;
 
 @SuppressWarnings("serial")
 class Apeiron extends JFrame {
+    private int BOARD_HEIGHT = 300;
+    private int BOARD_WIDTH = 400;
+
     private class Board extends GameBoard {
         private class TAdapter extends KeyAdapter {
             @Override
@@ -36,8 +40,7 @@ class Apeiron extends JFrame {
         boolean ingame;
         Timer timer;
         private int level;
-        private int boardWidth;
-        private int boardHeight;
+        private int score = 0;
 
         Board() {
             addKeyListener(new TAdapter());
@@ -45,7 +48,7 @@ class Apeiron extends JFrame {
             setBackground(Color.BLACK);
             setDoubleBuffered(true);
             ingame = true;
-            setSize(400, 300);
+            setSize(BOARD_WIDTH, BOARD_HEIGHT);
             craft = new Craft();
             initMushrooms();
             initLevel();
@@ -81,49 +84,64 @@ class Apeiron extends JFrame {
 
         private void checkCollisions() {
             // Craft and Centipedes
-            final Rectangle r3 = craft.getBounds();
+            final Rectangle craftBounds = craft.getBounds();
 
-            for (int j = 0; j < centipedes.size(); j++) {
-                final Centipede a = centipedes.get(j);
-                for (int k = 0; k < a.getParts().size(); k++) {
-                    final CentipedePart b = a.getParts().get(k);
-                    final Rectangle r2 = b.getBounds();
-                    if (r3.intersects(r2)) {
+            for (final Centipede centipede : centipedes) {
+                for (int k = 0; k < centipede.getParts().size(); k++) {
+                    final CentipedePart centipedePart = centipede.getParts().get(k);
+                    final Rectangle centipedePartBounds = centipedePart.getBounds();
+                    if (craftBounds.intersects(centipedePartBounds)) {
                         doLifeLost();
+                        return;
                     }
                 }
             }
 
             // Bullet and Centipedes
-            final ArrayList<Bullet> ms = craft.getBullets();
+            final ArrayList<Bullet> bullets = craft.getBullets();
 
-            for (int i = 0; i < ms.size(); i++) {
-                final Bullet m = ms.get(i);
+            Iterator<Bullet> bulletIterator = bullets.iterator();
+            while(bulletIterator.hasNext()) {
+                final ArrayList<Centipede> newCentipedes = new ArrayList<>();
+                final Bullet bullet = bulletIterator.next();
 
-                final Rectangle r1 = m.getBounds();
-                for (int j = 0; j < centipedes.size(); j++) {
-                    final Centipede centipede = centipedes.get(j);
+                final Rectangle bulletBounds = bullet.getBounds();
+                Iterator<Centipede> livingCentipedes = centipedes.iterator();
+                boolean hasHit = false;
+                while(livingCentipedes.hasNext()) {
+                    final Centipede centipede = livingCentipedes.next();
                     for (int k = 0; k < centipede.getParts().size(); k++) {
                         final CentipedePart b = centipede.getParts().get(k);
                         final Rectangle r2 = b.getBounds();
-                        if (r1.intersects(r2)) {
-                            // TODO: Hit centipede part.
-                            if (k == 0) {
+                        if (bulletBounds.intersects(r2)) {
+                            hasHit = true;
+                            score += 25;
+                            if (k == 0 || k == centipede.parts.size()-1) {
                                 centipede.getParts().remove(k);
+                                hasHit = true;
+                                break;
+                            } else {
+                                livingCentipedes.remove();
+                                newCentipedes.addAll(centipede.split(k));
+                                break;
                             }
                         }
                     }
                 }
+                if (hasHit) {
+                    bulletIterator.remove();
+                }
+                centipedes.addAll(newCentipedes);
             }
         }
 
         private void doLifeLost() {
-            // TODO Die
+            ingame = false;
         }
 
         private void initLevel() {
             centipedes = new ArrayList<>();
-            centipedes.add(new Centipede(level, 0, 0));
+            centipedes.add(new Centipede(level+15, 0, 0));
         }
 
         private void initMushrooms() {
@@ -140,8 +158,10 @@ class Apeiron extends JFrame {
         @Override
         public void paint(final Graphics g) {
             super.paint(g);
+            final Graphics2D g2d = (Graphics2D) g;
+            g.setColor(Color.YELLOW);
+            g.drawRect(0,0,BOARD_WIDTH, BOARD_HEIGHT);
             if (ingame) {
-                final Graphics2D g2d = (Graphics2D) g;
 
                 if (craft.isAlive()) {
                     craft.paint(g2d);
@@ -158,17 +178,17 @@ class Apeiron extends JFrame {
                 }
 
                 g2d.setColor(Color.WHITE);
-                g2d.drawString("Centipedes left: " + centipedes.size(), 5, 15);
+                g2d.drawString("Score: " + score, 5, 15);
 
             } else {
-                final String msg = "Game Over";
+                final String msg = "Game Over - Score: "+ score;
                 final Font small = new Font("Helvetica", Font.BOLD, 14);
                 final FontMetrics metr = this.getFontMetrics(small);
 
-                g.setColor(Color.white);
-                g.setFont(small);
-                g.drawString(msg, (boardWidth - metr.stringWidth(msg)) / 2,
-                        boardHeight / 2);
+                g2d.setColor(Color.white);
+                g2d.setFont(small);
+                g2d.drawString(msg, (BOARD_WIDTH - metr.stringWidth(msg)) / 2,
+                        BOARD_HEIGHT / 2);
             }
 
             Toolkit.getDefaultToolkit().sync();
@@ -197,19 +217,6 @@ class Apeiron extends JFrame {
             return new Rectangle(x, y, WIDTH, HEIGHT);
         }
 
-        public BufferedImage getImage() {
-            // TODO Get image
-            return null;
-        }
-
-        int getX() {
-            return x;
-        }
-
-        int getY() {
-            return y;
-        }
-
         public boolean isVisible() {
             return visible;
         }
@@ -227,15 +234,18 @@ class Apeiron extends JFrame {
     class Centipede {
         ArrayList<CentipedePart> parts;
 
-        public Centipede(final int l, final int x, final int y) {
-            parts = new ArrayList<CentipedePart>(l);
-            for (int i = 0; i < l; i++) {
-                //Model the chain as a vertical line to the point
+        Centipede(final int length, final int x, final int y) {
+            parts = new ArrayList<>(length);
+            for (int i = 0; i < length; i++) {
                 parts.add(new CentipedePart(this,
                         x,
                         y - (i * CentipedePart.HEIGHT)
                 ));
             }
+        }
+
+        private Centipede(List<CentipedePart> parts) {
+            this.parts = new ArrayList<>(parts);
         }
 
         public int getLength() {
@@ -253,11 +263,23 @@ class Apeiron extends JFrame {
         }
 
         public void paint(Graphics2D g2d) {
-            for (CentipedePart part : parts) {
-                part.paint(g2d);
+            for (int i = 0; i < parts.size(); i++) {
+                parts.get(i).paint(g2d, i == 0);
             }
         }
+
+        public List<Centipede> split(int k) {
+            Centipede head = new Centipede(parts.subList(0, k));
+            Centipede tail = new Centipede(parts.subList(k+1, parts.size()));
+            Collections.reverse(tail.parts);
+            for (CentipedePart part: tail.parts) {
+                part.switchDirection();
+            }
+            return Arrays.asList(head, tail);
+        }
     }
+
+    enum Direction { LEFT, DOWN, RIGHT }
 
     class CentipedePart {
         static final int WIDTH = 10, HEIGHT = 10;
@@ -265,7 +287,9 @@ class Apeiron extends JFrame {
         Centipede parent;
         int x;
         int y;
-        private boolean visible;
+        private Direction lastDirection = Direction.LEFT;
+        private Direction direction = Direction.LEFT;
+        private int movedDown;
 
         CentipedePart(Centipede p, int a, int b) {
             parent = p;
@@ -277,17 +301,68 @@ class Apeiron extends JFrame {
             return new Rectangle(x, y, WIDTH, HEIGHT);
         }
 
-        public boolean isVisible() {
-            return visible;
-        }
+        private int CENTIPEDE_SPEED = 1;
 
         public void move() {
-            // TODO: Centipede Part Shuffle
+            if (y-HEIGHT < 0) {
+                y += CENTIPEDE_SPEED;
+            } else if (direction == Direction.LEFT) {
+                if (x-CENTIPEDE_SPEED < 0) {
+                    x = 0;
+                    lastDirection = Direction.LEFT;
+                    direction = Direction.DOWN;
+                } else {
+                    x-= CENTIPEDE_SPEED;
+                }
+            } else if (direction == Direction.RIGHT) {
+                if (x+CENTIPEDE_SPEED+WIDTH > BOARD_WIDTH) {
+                    x = BOARD_WIDTH-WIDTH;
+                    lastDirection = Direction.RIGHT;
+                    direction = Direction.DOWN;
+                } else {
+                    x += CENTIPEDE_SPEED;
+                }
+            } else if (direction == Direction.DOWN) {
+                if (movedDown >= HEIGHT) {
+                    if (lastDirection == Direction.LEFT) {
+                        direction = Direction.RIGHT;
+                        movedDown = 0;
+                    } else {
+                        direction = Direction.LEFT;
+                        movedDown = 0;
+                    }
+                } else {
+                    movedDown += CENTIPEDE_SPEED;
+                    y += CENTIPEDE_SPEED;
+                }
+            }
         }
 
-        public void paint(Graphics2D g2d) {
-            g2d.setColor(Color.CYAN);
+        public void paint(Graphics2D g2d, boolean isHead) {
+            g2d.setColor(isHead ? Color.GREEN : Color.CYAN);
             g2d.fillOval(x, y, WIDTH, HEIGHT);
+        }
+
+        public void switchDirection() {
+            if (direction == Direction.LEFT) {
+                direction = Direction.RIGHT;
+            } else if (direction == Direction.RIGHT) {
+                direction = Direction.LEFT;
+            } else if (direction == Direction.DOWN) {
+                lastDirection = lastDirection == Direction.LEFT ? Direction.RIGHT : Direction.LEFT;
+            }
+        }
+
+        public void switchAndDown() {
+            if (direction == Direction.LEFT) {
+                lastDirection = Direction.LEFT;
+                direction = Direction.DOWN;
+            } else if (direction == Direction.RIGHT) {
+                lastDirection = Direction.RIGHT;
+                direction = Direction.DOWN;
+            } else if (direction == Direction.DOWN) {
+                lastDirection = lastDirection == Direction.LEFT ? Direction.RIGHT : Direction.LEFT;
+            }
         }
     }
 
@@ -295,14 +370,13 @@ class Apeiron extends JFrame {
         ArrayList<Bullet> bullets;
         int x, y, width = 10, height = 10;
         int dx, dy;
-        Image image;
         private boolean alive;
 
         Craft() {
             bullets = new ArrayList<>();
             alive = true;
-            x = 40;
-            y = 60;
+            x = BOARD_WIDTH/2;
+            y = BOARD_HEIGHT-30;
         }
 
         public Rectangle getBounds() {
@@ -311,18 +385,6 @@ class Apeiron extends JFrame {
 
         public ArrayList<Bullet> getBullets() {
             return bullets;
-        }
-
-        public Image getImage() {
-            return image;
-        }
-
-        public int getX() {
-            return x;
-        }
-
-        public int getY() {
-            return y;
         }
 
         public boolean isAlive() {
@@ -374,9 +436,15 @@ class Apeiron extends JFrame {
             if (x < 1) {
                 x = 1;
             }
+            if (x > BOARD_WIDTH-width) {
+                x = BOARD_WIDTH-width;
+            }
 
-            if (y < 1) {
-                y = 1;
+            if (y < BOARD_HEIGHT-100 ) {
+                y = BOARD_HEIGHT-100;
+            }
+            if (y > BOARD_HEIGHT-height) {
+                y = BOARD_HEIGHT-height;
             }
         }
 
@@ -386,14 +454,13 @@ class Apeiron extends JFrame {
         }
     }
 
-    class Mushroom {
-        String img = "mushroom.png";
+    private class Mushroom {
     }
 
     Apeiron() {
         add(new Board());
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
-        setSize(400, 300);
+        setSize(500, 400);
         setLocationRelativeTo(null);
         setTitle("Apeiron");
         setResizable(false);
