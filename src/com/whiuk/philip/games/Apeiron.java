@@ -51,6 +51,11 @@ class Apeiron extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
+            gameUpdate();
+            repaint();
+        }
+
+        private void gameUpdate() {
             if (ingame) {
                 if (centipedes.size() == 0) {
                     levelUp();
@@ -80,7 +85,6 @@ class Apeiron extends JFrame {
                     }
                 }
             }
-            repaint();
         }
 
         private void checkCollisions() {
