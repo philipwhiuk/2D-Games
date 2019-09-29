@@ -14,29 +14,36 @@ import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.util.Iterator;
+import java.util.Random;
 
 @SuppressWarnings("serial")
-public class MissileAttack extends JFrame {
-    public interface Moveable {
-		void move();
-    }
-    public abstract class Sprite {
-        protected int x;
-        protected int y;
-        public Sprite(int x, int y) {
+class MissileAttack extends JFrame {
+    private Random random = new Random();
+
+    abstract class Sprite {
+        int x;
+        int y;
+        ImageIcon icon;
+        Image image;
+        Sprite(int x, int y, String spriteFile) {
             this.x = x;
             this.y = y;
+            this.icon = new ImageIcon(this.getClass().getResource(spriteFile));
+            image = icon.getImage();
         }
-        public abstract Image getImage();
-        public abstract int getX();
-        public abstract int getY();
+        public Image getImage() {
+            return image;
+        }
     }
-	public class Board extends GameBoard {
+
+	class Board extends GameBoard {
 
 	    private Timer timer;
 	    private Craft craft;
 	    private ArrayList<Alien> aliens;
-	    private boolean ingame;
+	    private boolean inGame;
+	    private int level;
+	    private int score;
 	    private int B_WIDTH;
 	    private int B_HEIGHT;
 
@@ -51,26 +58,31 @@ public class MissileAttack extends JFrame {
 	        {810, 220}, {860, 20}, {740, 180},
 	        {820, 128}, {490, 170}, {700, 30}
 	     };
-	    /**
-	     * Constructor.
-	     */
-	    public Board() {
 
+        Board() {
 	        addKeyListener(new TAdapter());
 	        setFocusable(true);
 	        setBackground(Color.BLACK);
 	        setDoubleBuffered(true);
-	        ingame = true;
-
 	        setSize(400, 300);
-
-	        craft = new Craft();
-
-	        initAliens();
-
+            startGame();
 	        timer = new Timer(5, this);
 	        timer.start();
 	    }
+
+	    private void startGame() {
+            inGame = true;
+            level = 1;
+            score = 0;
+            craft = new Craft();
+            initAliens(level);
+        }
+
+        private void nextLevel() {
+            level++;
+            initAliens(level);
+        }
+
 	    @Override
         public final void addNotify() {
 	        super.addNotify();
@@ -78,7 +90,7 @@ public class MissileAttack extends JFrame {
 	        B_HEIGHT = getHeight();
 	    }
 
-	    final void initAliens() {
+	    final void initAliens(int level) {
 	        aliens = new ArrayList<>();
 			for (int[] initialAlienPosition : initialAlienPositions) {
 				aliens.add(new Alien(initialAlienPosition[0], initialAlienPosition[1]));
@@ -88,13 +100,16 @@ public class MissileAttack extends JFrame {
 	    public void paint(Graphics g) {
 	        super.paint(g);
 
-	        if (ingame) {
+	        if (inGame) {
 
 	            Graphics2D g2d = (Graphics2D)g;
 
-	            if (craft.isVisible())
-	                g2d.drawImage(craft.getImage(), craft.getX(), craft.getY(),
-	                              this);
+	            if (craft.isVisible()) {
+                    g2d.setColor(Color.PINK);
+                    g2d.draw(craft.getBounds());
+                    g2d.drawImage(craft.getImage(), craft.getX(), craft.getY(),
+                            this);
+                }
 
 				for (Missile missile : craft.getMissiles()) {
 					g2d.drawImage(missile.getImage(), missile.getX(), missile.getY(), this);
@@ -102,33 +117,40 @@ public class MissileAttack extends JFrame {
 
 				for (Alien alien : aliens) {
 					if (alien.isVisible()) {
+                        g2d.draw(alien.getBounds());
 						g2d.drawImage(alien.getImage(), alien.getX(), alien.getY(), this);
 					}
 				}
 
 	            g2d.setColor(Color.WHITE);
-	            g2d.drawString("Aliens left: " + aliens.size(), 5, 15);
+	            g2d.drawString("Level: " + level, 5, 15);
+                g2d.drawString("Score: " + score, 5, 30);
 
 
 	        } else {
-	            String msg = "Game Over";
-	            Font small = new Font("Helvetica", Font.BOLD, 14);
-	            FontMetrics metr = this.getFontMetrics(small);
+				Font font = new Font("Helvetica", Font.BOLD, 14);
+				FontMetrics metrics = this.getFontMetrics(font);
+				g.setColor(Color.white);
+				g.setFont(font);
 
-	            g.setColor(Color.white);
-	            g.setFont(small);
-	            g.drawString(msg, (B_WIDTH - metr.stringWidth(msg)) / 2,
+	            String msg = "Game Over";
+				String playAgain = "Press ENTER to play again";
+
+	            g.drawString(msg, (B_WIDTH - metrics.stringWidth(msg)) / 2,
 	                         B_HEIGHT / 2);
+				g.drawString(playAgain, (B_WIDTH - metrics.stringWidth(playAgain)) / 2,
+						(B_HEIGHT / 2) + 20);
 	        }
 
 	        Toolkit.getDefaultToolkit().sync();
 	        g.dispose();
 	    }
+
         @Override
 	    public final void actionPerformed(final ActionEvent e) {
 
 	        if (aliens.size() == 0) {
-	            ingame = false;
+	            nextLevel();
 	        }
 
 	        Iterator<Missile> missileIterator = craft.getMissiles().iterator();
@@ -145,6 +167,7 @@ public class MissileAttack extends JFrame {
                 if (a.isVisible()) {
                     a.move();
                 } else {
+                    score += 50;
                     alienIterator.remove();
                 }
             }
@@ -164,7 +187,7 @@ public class MissileAttack extends JFrame {
                 if (craftBounds.intersects(alienBounds)) {
                     craft.setVisible(false);
                     alien.setVisible(false);
-                    ingame = false;
+                    inGame = false;
                 }
             }
 
@@ -192,34 +215,34 @@ public class MissileAttack extends JFrame {
 	        }
             @Override
 	        public void keyPressed(final KeyEvent e) {
-	            craft.keyPressed(e);
+	            if (inGame) {
+                    craft.keyPressed(e);
+                } else {
+	                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+	                    startGame();
+                    }
+                }
 	        }
 	    }
 	}
 
-	public class Craft extends Sprite implements Moveable {
-
-	    private String craft = "craft.png";
-
+	class Craft extends Sprite {
 	    private int dx;
 	    private int dy;
 	    private int width;
 	    private int height;
 	    private boolean visible;
-	    private Image image;
 	    private ArrayList<Missile> missiles;
 
-	    public Craft() {
-	        super(40, 60);
-	        ImageIcon ii = new ImageIcon(this.getClass().getResource(craft));
-	        image = ii.getImage();
-	        width = image.getWidth(null);
-	        height = image.getHeight(null);
+	    Craft() {
+	        super(40, 60, "craft.png");
+	        width = image.getWidth(null)-2;
+	        height = image.getHeight(null)-2;
 	        missiles = new ArrayList<>();
 	        visible = true;
 	    }
-	    @Override
-	    public void move() {
+
+	    void move() {
 
 	        x += dx;
 	        y += dy;
@@ -232,55 +255,32 @@ public class MissileAttack extends JFrame {
 	            y = 1;
 	        }
 	    }
-	    @Override
-	    public int getX() {
+
+	    int getX() {
 	        return x;
 	    }
 
-        @Override
-	    public int getY() {
+        int getY() {
 	        return y;
 	    }
 
-        @Override
-	    public Image getImage() {
-	        return image;
-	    }
-
-        /**
-         * @return list of missiles.
-         */
-	    public ArrayList<Missile> getMissiles() {
+	    ArrayList<Missile> getMissiles() {
 	        return missiles;
 	    }
 
-	    /**
-	     * @param visible Visibility of craft
-	     */
-	    public void setVisible(boolean visible) {
+	    void setVisible(boolean visible) {
 	        this.visible = visible;
 	    }
 
-	    /**
-	     * @return Visibility of craft
-	     */
-	    public boolean isVisible() {
+	    boolean isVisible() {
 	        return visible;
 	    }
 
-	    /**
-	     * 
-	     * @return Collision bounds
-	     */
-	    public Rectangle getBounds() {
-	        return new Rectangle(x, y, width, height);
+	    Rectangle getBounds() {
+	        return new Rectangle(x, y+1, width, height);
 	    }
 
-	    /**
-	     * Responds to key presses
-	     * @param e Key press event
-	     */
-	    public void keyPressed(KeyEvent e) {
+	    void keyPressed(KeyEvent e) {
 
 	        int key = e.getKeyCode();
 	        char keyChar = e.getKeyChar();
@@ -310,7 +310,7 @@ public class MissileAttack extends JFrame {
 	        missiles.add(new Missile(x + width, y + height / 2));
 	    }
 
-	    public void keyReleased(KeyEvent e) {
+	    void keyReleased(KeyEvent e) {
 	        int key = e.getKeyCode();
 	        char keyChar = e.getKeyChar();
 
@@ -331,46 +331,32 @@ public class MissileAttack extends JFrame {
 	        }
 	    }
 	}
-	/**
-	 * Alien craft
-	 * @author Philip
-	 *
-	 */
-	public class Alien extends Sprite implements Moveable {
-	    private String craft = "alien.png";
+
+	class Alien extends Sprite {
 	    private int width;
 	    private int height;
 	    private boolean visible;
-	    private Image image;
 
-	    /**
-	     * Alien constructor.
-	     * @param x X Position
-	     * @param y Y Position
-	     */
-	    public Alien(int x, int y) {
-	        super(x, y);
-	        ImageIcon ii = new ImageIcon(this.getClass().getResource(craft));
-	        image = ii.getImage();
-	        width = image.getWidth(null);
-	        height = image.getHeight(null);
+	    Alien(int x, int y) {
+	        super(x, y, "alien.png");
+	        width = image.getWidth(null)-1;
+	        height = image.getHeight(null)-1;
 	        visible = true;
 	    }
 
-        @Override
 	    public void move() {
-	        if (x < 0) 
-	            x = 400;
+	        if (x < 0) {
+                x = 400;
+                y = random.nextInt(250);
+            }
 	        x -= 1;
 	    }
 
-        @Override
-	    public int getX() {
+        public int getX() {
 	        return x;
 	    }
 
-        @Override
-	    public int getY() {
+        public int getY() {
 	        return y;
 	    }
 
@@ -399,13 +385,8 @@ public class MissileAttack extends JFrame {
 	        return new Rectangle(x, y, width, height);
 	    }
 	}
-	/**
-	 * Missile
-	 * @author Philip
-	 *
-	 */
-	public class Missile extends Sprite implements Moveable {
-	    private Image image;
+
+	class Missile extends Sprite {
 	    boolean alive;
 	    private int width, height;
 
@@ -418,27 +399,17 @@ public class MissileAttack extends JFrame {
 	     * @param y Y Position
 	     */
 	    public Missile(int x, int y) {
-	        super(x, y);
-	        ImageIcon ii =
-	            new ImageIcon(this.getClass().getResource("missile.png"));
-	        image = ii.getImage();
+	        super(x, y, "missile.png");
 	        alive = true;
 	        width = image.getWidth(null);
 	        height = image.getHeight(null);
 	    }
 
-	    @Override
-	    public Image getImage() {
-	        return image;
-	    }
-
-	    @Override
-        public int getX() {
+	    public int getX() {
 	        return x;
 	    }
 
-        @Override
-	    public int getY() {
+        public int getY() {
 	        return y;
 	    }
 
@@ -454,7 +425,6 @@ public class MissileAttack extends JFrame {
 	        return new Rectangle(x, y, width, height);
 	    }
 
-	    @Override
 	    public void move() {
 	        x += MISSILE_SPEED;
 	        if (x > BOARD_WIDTH) {
@@ -463,7 +433,7 @@ public class MissileAttack extends JFrame {
 	    }
 	}
 
-	public MissileAttack() {
+	MissileAttack() {
         add(new Board());
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(400, 300);
