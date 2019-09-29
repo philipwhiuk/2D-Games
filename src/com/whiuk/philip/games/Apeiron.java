@@ -176,7 +176,6 @@ class Apeiron extends JFrame {
 
         private void levelUp() {
             level++;
-            System.out.println("Starting level: " + level);
             initLevel();
         }
 
@@ -208,6 +207,7 @@ class Apeiron extends JFrame {
 
                 g2d.setColor(Color.WHITE);
                 g2d.drawString("Score: " + score, 5, 15);
+                g2d.drawString("Level: " + level, 5, 30);
 
             } else {
                 final String msg = "Game Over - Score: "+ score;
