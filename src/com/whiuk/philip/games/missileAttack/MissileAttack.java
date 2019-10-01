@@ -1,4 +1,6 @@
-package com.whiuk.philip.games;
+package com.whiuk.philip.games.missileAttack;
+
+import com.whiuk.philip.games.GameBoard;
 
 import java.awt.Image;
 import java.awt.Rectangle;
@@ -17,7 +19,7 @@ import java.util.Iterator;
 import java.util.Random;
 
 @SuppressWarnings("serial")
-class MissileAttack extends JFrame {
+public class MissileAttack extends JFrame {
     private Random random = new Random();
 
     abstract class Sprite {
@@ -433,7 +435,7 @@ class MissileAttack extends JFrame {
 	    }
 	}
 
-	MissileAttack() {
+	public MissileAttack() {
         add(new Board());
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(400, 300);

@@ -1,4 +1,6 @@
-package com.whiuk.philip.games;
+package com.whiuk.philip.games.pacman;
+
+import com.whiuk.philip.games.GameBoard;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

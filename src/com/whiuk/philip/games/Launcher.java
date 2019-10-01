@@ -1,9 +1,13 @@
 package com.whiuk.philip.games;
 
+import com.whiuk.philip.games.apeiron.Apeiron;
+import com.whiuk.philip.games.breakout.Breakout;
+import com.whiuk.philip.games.missileAttack.MissileAttack;
+import com.whiuk.philip.games.pacman.Pacman;
+import com.whiuk.philip.games.snake.Snake;
+
 import java.awt.ComponentOrientation;
 import java.awt.FlowLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 
 import javax.swing.*;
 
@@ -13,7 +17,7 @@ public class Launcher extends JFrame {
         new Launcher();
     }
 
-    public Launcher() {
+    Launcher() {
         super();
         setLayout(new FlowLayout());
         buildComponents();
@@ -21,6 +25,21 @@ public class Launcher extends JFrame {
         setVisible(true);
     }
     private void buildComponents() {
+        JButton apeiron = new JButton("Apeiron");
+        apeiron.addActionListener(e -> {
+            new Apeiron();
+            dispose();
+        });
+        JButton breakout = new JButton("Breakout");
+        breakout.addActionListener(e -> {
+            new Breakout();
+            dispose();
+        });
+        JButton missileattack = new JButton("Missile Attack");
+        missileattack.addActionListener(e -> {
+            new MissileAttack();
+            dispose();
+        });
         JButton pacman = new JButton("Pacman");
         pacman.addActionListener(e -> {
             new Pacman();
@@ -31,26 +50,11 @@ public class Launcher extends JFrame {
             new Snake();
             dispose();
         });
-        JButton missileattack = new JButton("Missile Attack");
-        missileattack.addActionListener(e -> {
-            new MissileAttack();
-            dispose();
-        });
-        JButton apeiron = new JButton("Apeiron");
-        apeiron.addActionListener(e -> {
-            new Apeiron();
-            dispose();
-        });
-        JButton rpg = new JButton("RPG");
-        rpg.addActionListener(e -> {
-            new RPG();
-            dispose();
-        });
+        add(apeiron);
+        add(breakout);
+        add(missileattack);
         add(pacman);
         add(snake);
-        add(missileattack);
-        add(apeiron);
-        add(rpg);
         setComponentOrientation(ComponentOrientation.LEFT_TO_RIGHT);
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
     }

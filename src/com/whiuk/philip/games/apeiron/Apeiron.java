@@ -1,4 +1,6 @@
-package com.whiuk.philip.games;
+package com.whiuk.philip.games.apeiron;
+
+import com.whiuk.philip.games.GameBoard;
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -11,7 +13,7 @@ import javax.swing.*;
 import javax.swing.Timer;
 
 @SuppressWarnings("serial")
-class Apeiron extends JFrame {
+public class Apeiron extends JFrame {
     private int BOARD_HEIGHT = 300;
     private int BOARD_WIDTH = 400;
 
@@ -554,7 +556,7 @@ class Apeiron extends JFrame {
         }
     }
 
-    Apeiron() {
+    public Apeiron() {
         add(new Board());
         setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
         setSize(500, 400);

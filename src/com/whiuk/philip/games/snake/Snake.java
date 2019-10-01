@@ -1,4 +1,6 @@
-package com.whiuk.philip.games;
+package com.whiuk.philip.games.snake;
+
+import com.whiuk.philip.games.GameBoard;
 
 import java.awt.Color;
 import java.awt.Font;
